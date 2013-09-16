@@ -73,20 +73,24 @@ void readGraph() {
 		exit(1);
 	}
 
-	int tmp;
 	fscanf(fp, "%d %d\n", &vertexsNumber, &infinite);
 	printf("vertexNumber: %d, infinite: %d\n", vertexsNumber, infinite);
 
-	graph = realloc(graph, vertexsNumber * vertexsNumber * sizeof(int));
+	graph = realloc(graph, sizeof(int) * vertexsNumber * vertexsNumber);
 
-
-	int currentElement = 0;
-
+	int row = 0;
+	int col = 0;
+	int readValue = -1;
 	while (1) {
-		int ret = fscanf(fp, "%d", &graph[currentElement]); //bez wczytywania /n
+		int ret = fscanf(fp, "%d", &readValue); //bez wczytywania /n
 		if (ret == 1) {
-			printf("%d, ", graph[currentElement]);
-			currentElement++;
+			graph[row * (vertexsNumber - 1) + col] = readValue;
+			printf("%d, ", graph[col]);
+			col++;
+			if (col >= vertexsNumber) {
+				col = 0;
+				row++;
+			}
 		} else if (ret == EOF) {
 			break;
 		} else {
@@ -94,10 +98,8 @@ void readGraph() {
 		}
 
 	}
-	printf("\n");
-	if (feof(fp)) {
-		puts("EOF");
-	}
+
+	puts("");
 	fclose(fp); /* zamknij plik */
 	return;
 }
@@ -111,7 +113,7 @@ void sendStartVertex(int ip, int startVertex) {
 //zwraca index wlasciwego wierzcholka
 int selectShortestDistance(struct _tResult *tab, int length) {
 	int shortestIndex = -1, shortestDistance = -1, i;
-	for (i = 0; i < length; ++i) {
+	for (i = 0; i < length; i++) {
 		if ((shortestIndex == -1 && shortestDistance == -1)
 				|| (shortestDistance > tab[i].suma)) {
 			shortestDistance = tab[i].suma;
@@ -134,38 +136,36 @@ int random_number(int min_num, int max_num) {
 	return result;
 }
 
-//void generateGraph(int vertexNumber) {
-//	int number = 0;
-//	srand(time(NULL ));
-//	puts("tworze");
-//
-//	cost = malloc(sizeof *cost * vertexNumber);
-//	if (cost) {
-//		int i;
-//		for (i = 0; i < vertexNumber; i++) {
-//			cost[i] = malloc(sizeof *cost[i] * vertexNumber);
-//		}
-//	}
-//
-//	puts("stworzylem");
-//	for (number = 0; number < vertexNumber; number++) {
-//		cost[number][number] = INFINITE;
-//		int next = 0;
-//		for (next = number + 1; next < vertexNumber; next++) {
-//			int distance = INFINITE;
-//			if (!(random_number(0, 3) == 2)) { //jesli istnieje polaczenie
-//				distance = random_number(1, 5);
-//				printf("distance: %d\n", distance);
-//			}
-//
-//			cost[number][next] = distance;
-//			cost[next][number] = distance;
-//
-//		}
-//	}
-//
-//	puts("wygenerowalem graf");
-//}
+void generateGraph(int vertexNumber) {
+	int number = 0;
+	srand(time(NULL ));
+	puts("tworze");
+
+	cost = malloc(sizeof *cost * vertexNumber);
+	if (cost) {
+		int i;
+		for (i = 0; i < vertexNumber; i++) {
+			cost[i] = malloc(sizeof *cost[i] * vertexNumber);
+		}
+	}
+
+	for (number = 0; number < vertexNumber; number++) {
+		cost[number][number] = INFINITE;
+		int next = 0;
+		for (next = number + 1; next < vertexNumber; next++) {
+			int distance = INFINITE;
+			if (!(random_number(0, 3) == 2)) { //jesli istnieje polaczenie
+				distance = random_number(1, 5);
+				printf("distance: %d\n", distance);
+			}
+
+			cost[number][next] = distance;
+			cost[next][number] = distance;
+
+		}
+	}
+
+}
 
 void printGraph(int max) {
 	int i, j = 0;
@@ -179,23 +179,23 @@ void printGraph(int max) {
 	}
 }
 
-void generateGraph(int max) {
-	int j, i = 0;
-
-	cost = malloc(sizeof *cost * max);
-	if (cost) {
-		int i;
-		for (i = 0; i < max; i++) {
-			cost[i] = malloc(sizeof *cost[i] * max);
-		}
-	}
-
-	for (i = 0; i < max; i++) {
-		for (j = 0; j < max; j++) {
-			cost[i][j] = costTmp[i][j];
-		}
-	}
-}
+//void generateGraph(int max) {
+//	int j, i = 0;
+//
+//	cost = malloc(sizeof *cost * max);
+//	if (cost) {
+//		int i;
+//		for (i = 0; i < max; i++) {
+//			cost[i] = malloc(sizeof *cost[i] * max);
+//		}
+//	}
+//
+//	for (i = 0; i < max; i++) {
+//		for (j = 0; j < max; j++) {
+//			cost[i][j] = costTmp[i][j];
+//		}
+//	}
+//}
 
 void rewrideArrays(int length) {
 	int lengthFor2D = length * length;
@@ -210,7 +210,6 @@ void rewrideArrays(int length) {
 
 	free(cost);
 }
-
 
 int main() {
 	infinite = INFINITE;
@@ -260,7 +259,7 @@ int main() {
 			sizeof(struct _tResult) * vertexsNumber);
 
 	if (PvmNoParent == (parentId = pvm_parent())) {
-		pvm_catchout(stdout);
+//		pvm_catchout(stdout);
 		for (i = 0; i < hostsNumber; i++) {
 
 			if (0
@@ -269,8 +268,6 @@ int main() {
 				printf("%s [%x] nie moge stworzyc dzieci\n", hosts[i].hi_name,
 						myId);
 				pvm_perror("pvm_spawn");
-//				pvm_exit();
-//				return 1;
 			} else {
 				tIds = realloc(tIds, sizeof(int) * (tIdsMax + taskNo));
 
@@ -293,13 +290,15 @@ int main() {
 
 		puts("rozdzielam zadania i zbieram wyniki");
 
+		int lastSendedVertex = vertexNumberCondition;
+
 		while (vertexNumberCondition + 1) {
 			if (i >= tIdsMax)
 				i = 0;
 
-			if (!activeTask[i]) {
+			if (!activeTask[i] && lastSendedVertex >= 0) {
 				printf("stId: %d, tId: %d \n", i, tIds[i]);
-				sendStartVertex(tIds[i], vertexNumberCondition);
+				sendStartVertex(tIds[i], lastSendedVertex--);
 				activeTask[i] = tIds[i];
 			}
 
@@ -317,7 +316,6 @@ int main() {
 				int idx = 0;
 				for (idx = 0; idx < tIdsMax; idx++) {
 					if (activeTask[idx] == tid) {
-						printf("recv i: %d\n", idx);
 						activeTask[idx] = 0;
 						break;
 					}
